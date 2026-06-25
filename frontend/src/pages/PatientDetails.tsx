@@ -58,9 +58,23 @@ export function PatientDetails() {
     } : emptyEvolution);
     setError(""); setModal("evolution");
   };
-  const removeEvolution = async (evolutionId: string) => { if (confirm("Excluir esta evolução?")) { await api.delete(`/patients/${id}/evolutions/${evolutionId}`); await load(); } };
-  const removeDocument = async (documentId: string) => { if (confirm("Excluir este documento?")) { await api.delete(`/patients/${id}/documents/${documentId}`); await load(); } };
-  const toggleStatus = async () => { await api.patch(`/patients/${id}/status`, { status: patient.status === "ACTIVE" ? "INACTIVE" : "ACTIVE" }); await load(); };
+  const removeEvolution = async (evolutionId: string) => {
+    if (!confirm("Excluir esta evolução?")) return;
+    setError("");
+    try { await api.delete(`/patients/${id}/evolutions/${evolutionId}`); await load(); }
+    catch (err) { setError(getErrorMessage(err)); }
+  };
+  const removeDocument = async (documentId: string) => {
+    if (!confirm("Excluir este documento?")) return;
+    setError("");
+    try { await api.delete(`/patients/${id}/documents/${documentId}`); await load(); }
+    catch (err) { setError(getErrorMessage(err)); }
+  };
+  const toggleStatus = async () => {
+    setError("");
+    try { await api.patch(`/patients/${id}/status`, { status: patient.status === "ACTIVE" ? "INACTIVE" : "ACTIVE" }); await load(); }
+    catch (err) { setError(getErrorMessage(err)); }
+  };
 
   const tabs: { key: Tab; label: string }[] = [{ key: "overview", label: "Visão geral" }, { key: "record", label: "Prontuário" }, { key: "evolutions", label: "Evoluções" }, { key: "diary", label: "Diário Terapêutico" }, { key: "weekly", label: "Relatório Semanal" }, { key: "documents", label: "Documentos" }];
   return (
@@ -73,6 +87,7 @@ export function PatientDetails() {
         </div>
       </div>
       <div className="no-print mb-7 overflow-x-auto rounded-2xl border border-white bg-white/70 p-1.5 shadow-sm"><div className="flex min-w-max gap-1">{tabs.map((item) => <button key={item.key} onClick={() => setTab(item.key)} className={`rounded-xl px-4 py-2.5 text-sm font-medium transition ${tab === item.key ? "bg-rosewood-100 text-rosewood-700 shadow-sm" : "text-stone-400 hover:bg-white hover:text-stone-700"}`}>{item.label}</button>)}</div></div>
+      {error && !modal && tab !== "record" && <Error text={error} />}
 
       {tab === "overview" && <Overview patient={patient} />}
       {tab === "record" && <div className="card max-w-4xl"><div className="mb-5"><h2 className="font-semibold text-stone-800">Prontuário clínico</h2><p className="text-sm text-stone-400">Avaliação e planejamento terapêutico do paciente.</p></div>{error && <Error text={error} />}<MedicalRecordForm value={recordForm} onChange={setRecordForm} onSubmit={submitRecord} saving={saving} /></div>}

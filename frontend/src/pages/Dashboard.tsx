@@ -1,7 +1,7 @@
 import { Activity, CalendarClock, ChevronRight, HeartPulse, UserCheck, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { api } from "../lib/api";
+import { api, getErrorMessage } from "../lib/api";
 import { careLabels, formatDate } from "../lib/format";
 import type { Appointment, Evolution } from "../types";
 import { EmptyState, Loading, PageHeader } from "../components/ui";
@@ -11,8 +11,15 @@ type DashboardData = { totalPatients: number; activePatients: number; weeklySess
 
 export function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
+  const [error, setError] = useState("");
   const { therapist } = useAuth();
-  useEffect(() => { api.get("/dashboard").then((r) => setData(r.data)); }, []);
+  const load = async () => {
+    setError("");
+    try { const { data: response } = await api.get("/dashboard"); setData(response); }
+    catch (err) { setError(getErrorMessage(err)); }
+  };
+  useEffect(() => { load(); }, []);
+  if (error && !data) return <EmptyState title="Não foi possível carregar o painel" description={error} action={<button className="btn-primary" onClick={load}>Tentar novamente</button>} />;
   if (!data) return <Loading label="Preparando seu painel..." />;
   const firstName = therapist?.name.replace(/^Dra?\.\s*/i, "").split(" ")[0];
   const cards = [

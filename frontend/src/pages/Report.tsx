@@ -1,9 +1,10 @@
 import { ArrowLeft, HeartHandshake, Printer } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Loading } from "../components/ui";
+import { EmptyState, Loading } from "../components/ui";
 import { useAuth } from "../contexts/AuthContext";
 import { api } from "../lib/api";
+import { getErrorMessage } from "../lib/api";
 import { careLabels, formatDate } from "../lib/format";
 import type { Patient } from "../types";
 
@@ -11,7 +12,14 @@ export function Report() {
   const { id } = useParams();
   const { therapist } = useAuth();
   const [patient, setPatient] = useState<Patient | null>(null);
-  useEffect(() => { api.get(`/patients/${id}`).then((r) => setPatient(r.data)); }, [id]);
+  const [error, setError] = useState("");
+  const load = async () => {
+    setError("");
+    try { const { data } = await api.get(`/patients/${id}`); setPatient(data); }
+    catch (err) { setError(getErrorMessage(err)); }
+  };
+  useEffect(() => { load(); }, [id]);
+  if (error && !patient) return <EmptyState title="Não foi possível preparar o relatório" description={error} action={<button className="btn-primary" onClick={load}>Tentar novamente</button>} />;
   if (!patient) return <Loading label="Preparando relatório..." />;
   const record = patient.medicalRecord;
   const evolutions = patient.evolutions?.slice(0, 5) || [];

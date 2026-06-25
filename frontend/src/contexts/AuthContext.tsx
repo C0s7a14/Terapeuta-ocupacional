@@ -11,10 +11,29 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState(() => localStorage.getItem("essentia_token"));
+  const [token, setToken] = useState(() => {
+    const savedToken = localStorage.getItem("essentia_token");
+    const savedTherapist = localStorage.getItem("essentia_therapist");
+    if (!savedToken || !savedTherapist) return null;
+    try {
+      JSON.parse(savedTherapist);
+      return savedToken;
+    } catch {
+      localStorage.removeItem("essentia_therapist");
+      localStorage.removeItem("essentia_token");
+      return null;
+    }
+  });
   const [therapist, setTherapist] = useState<Therapist | null>(() => {
     const saved = localStorage.getItem("essentia_therapist");
-    return saved ? JSON.parse(saved) : null;
+    if (!saved) return null;
+    try {
+      return JSON.parse(saved) as Therapist;
+    } catch {
+      localStorage.removeItem("essentia_therapist");
+      localStorage.removeItem("essentia_token");
+      return null;
+    }
   });
 
   function signIn(newToken: string, newTherapist: Therapist) {
@@ -39,4 +58,3 @@ export function useAuth() {
   if (!context) throw new Error("useAuth deve ser usado dentro de AuthProvider");
   return context;
 }
-
