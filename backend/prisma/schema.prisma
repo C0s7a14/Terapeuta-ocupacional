@@ -26,6 +26,14 @@ enum AppointmentStatus {
   NO_SHOW
 }
 
+enum DiaryMood {
+  HAPPY
+  NEUTRAL
+  SAD
+  ANXIOUS
+  TIRED
+}
+
 model Therapist {
   id           String   @id @default(cuid())
   name         String
@@ -40,6 +48,7 @@ model Therapist {
   evolutions   SessionEvolution[]
   appointments Appointment[]
   documents    PatientDocument[]
+  diaryEntries PatientDiaryEntry[]
 }
 
 model Patient {
@@ -64,6 +73,7 @@ model Patient {
   evolutions      SessionEvolution[]
   appointments    Appointment[]
   documents       PatientDocument[]
+  diaryEntries    PatientDiaryEntry[]
 
   @@index([therapistId, status])
 }
@@ -142,3 +152,22 @@ model PatientDocument {
   @@index([therapistId])
 }
 
+model PatientDiaryEntry {
+  id               String    @id @default(cuid())
+  patientId        String
+  therapistId      String
+  mood             DiaryMood
+  emotionalScale   Int
+  description      String    @db.Text
+  activities       String?   @db.Text
+  therapistNotes   String?   @db.Text
+  tags             Json?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  patient          Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  therapist        Therapist @relation(fields: [therapistId], references: [id], onDelete: Cascade)
+
+  @@index([patientId, createdAt])
+  @@index([therapistId, createdAt])
+}

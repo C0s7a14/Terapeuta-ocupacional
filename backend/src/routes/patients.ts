@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
 import { dateOnly } from "../utils.js";
-import { documentSchema, evolutionSchema, medicalRecordSchema, patientSchema } from "../validators.js";
+import { diaryEntrySchema, documentSchema, evolutionSchema, medicalRecordSchema, patientSchema } from "../validators.js";
 
 export const patientsRouter = Router();
 
@@ -45,6 +45,7 @@ patientsRouter.get("/:id", async (req, res) => {
       evolutions: { orderBy: [{ sessionDate: "desc" }, { time: "desc" }] },
       appointments: { orderBy: [{ date: "desc" }, { startTime: "desc" }] },
       documents: { orderBy: { createdAt: "desc" } },
+      diaryEntries: { orderBy: { createdAt: "desc" }, take: 5 },
     },
   });
   if (!patient) return res.status(404).json({ message: "Paciente não encontrado." });
@@ -141,3 +142,56 @@ patientsRouter.delete("/:id/documents/:documentId", async (req, res) => {
   res.status(204).send();
 });
 
+patientsRouter.get("/:id/diary", async (req, res) => {
+  if (!(await ownedPatient(req.params.id, req.therapistId!))) {
+    return res.status(404).json({ message: "Paciente não encontrado." });
+  }
+  const entries = await prisma.patientDiaryEntry.findMany({
+    where: { patientId: req.params.id, therapistId: req.therapistId! },
+    orderBy: { createdAt: "desc" },
+  });
+  res.json(entries);
+});
+
+patientsRouter.post("/:id/diary", async (req, res) => {
+  const data = diaryEntrySchema.parse(req.body);
+  if (!(await ownedPatient(req.params.id, req.therapistId!))) {
+    return res.status(404).json({ message: "Paciente não encontrado." });
+  }
+  const entry = await prisma.patientDiaryEntry.create({
+    data: {
+      ...data,
+      tags: data.tags ?? undefined,
+      patientId: req.params.id,
+      therapistId: req.therapistId!,
+    },
+  });
+  res.status(201).json(entry);
+});
+
+patientsRouter.put("/:id/diary/:entryId", async (req, res) => {
+  const data = diaryEntrySchema.parse(req.body);
+  if (!(await ownedPatient(req.params.id, req.therapistId!))) {
+    return res.status(404).json({ message: "Paciente não encontrado." });
+  }
+  const entry = await prisma.patientDiaryEntry.findFirst({
+    where: { id: req.params.entryId, patientId: req.params.id, therapistId: req.therapistId! },
+  });
+  if (!entry) return res.status(404).json({ message: "Registro do diário não encontrado." });
+  res.json(await prisma.patientDiaryEntry.update({
+    where: { id: entry.id },
+    data: { ...data, tags: data.tags ?? undefined },
+  }));
+});
+
+patientsRouter.delete("/:id/diary/:entryId", async (req, res) => {
+  if (!(await ownedPatient(req.params.id, req.therapistId!))) {
+    return res.status(404).json({ message: "Paciente não encontrado." });
+  }
+  const entry = await prisma.patientDiaryEntry.findFirst({
+    where: { id: req.params.entryId, patientId: req.params.id, therapistId: req.therapistId! },
+  });
+  if (!entry) return res.status(404).json({ message: "Registro do diário não encontrado." });
+  await prisma.patientDiaryEntry.delete({ where: { id: entry.id } });
+  res.status(204).send();
+});

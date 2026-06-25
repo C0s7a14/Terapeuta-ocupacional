@@ -1,6 +1,7 @@
 export type CareType = "CLINICAL" | "HOME" | "SCHOOL" | "ONLINE";
 export type AppointmentStatus = "SCHEDULED" | "COMPLETED" | "CANCELED" | "NO_SHOW";
 export type PatientStatus = "ACTIVE" | "INACTIVE";
+export type DiaryMood = "HAPPY" | "NEUTRAL" | "SAD" | "ANXIOUS" | "TIRED";
 
 export interface Therapist {
   id: string;
@@ -54,6 +55,20 @@ export interface PatientDocument {
   createdAt: string;
 }
 
+export interface PatientDiaryEntry {
+  id: string;
+  patientId: string;
+  therapistId: string;
+  mood: DiaryMood;
+  emotionalScale: number;
+  description: string;
+  activities?: string;
+  therapistNotes?: string;
+  tags?: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Patient {
   id: string;
   name: string;
@@ -71,6 +86,6 @@ export interface Patient {
   evolutions?: Evolution[];
   appointments?: Appointment[];
   documents?: PatientDocument[];
+  diaryEntries?: PatientDiaryEntry[];
   _count?: { evolutions: number; appointments: number; documents: number };
 }
-
