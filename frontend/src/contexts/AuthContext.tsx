@@ -1,9 +1,11 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { api } from "../lib/api";
 import type { Therapist } from "../types";
 
 type AuthContextValue = {
   therapist: Therapist | null;
   token: string | null;
+  validatingSession: boolean;
   signIn: (token: string, therapist: Therapist) => void;
   signOut: () => void;
 };
@@ -11,6 +13,7 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const [validatingSession, setValidatingSession] = useState(true);
   const [token, setToken] = useState(() => {
     const savedToken = localStorage.getItem("essentia_token");
     const savedTherapist = localStorage.getItem("essentia_therapist");
@@ -36,6 +39,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   });
 
+  useEffect(() => {
+    let active = true;
+
+    async function validateSession() {
+      if (!token) {
+        setValidatingSession(false);
+        return;
+      }
+
+      try {
+        const { data } = await api.get<Therapist>("/auth/me");
+        if (!active) return;
+        localStorage.setItem("essentia_therapist", JSON.stringify(data));
+        setTherapist(data);
+      } catch {
+        if (!active) return;
+        localStorage.removeItem("essentia_token");
+        localStorage.removeItem("essentia_therapist");
+        setToken(null);
+        setTherapist(null);
+      } finally {
+        if (active) setValidatingSession(false);
+      }
+    }
+
+    void validateSession();
+    return () => {
+      active = false;
+    };
+  }, [token]);
+
   function signIn(newToken: string, newTherapist: Therapist) {
     localStorage.setItem("essentia_token", newToken);
     localStorage.setItem("essentia_therapist", JSON.stringify(newTherapist));
@@ -50,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setTherapist(null);
   }
 
-  return <AuthContext.Provider value={{ therapist, token, signIn, signOut }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ therapist, token, validatingSession, signIn, signOut }}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

@@ -15,12 +15,14 @@ import { PortalLogin } from "./pages/portal/PortalLogin";
 import { PortalNewEntry } from "./pages/portal/PortalNewEntry";
 
 function PrivateRoutes() {
-  const { token } = useAuth();
+  const { token, validatingSession } = useAuth();
+  if (validatingSession) return null;
   return token ? <Layout /> : <Navigate to="/login" replace />;
 }
 
 function PrivatePortalRoutes() {
-  const { token } = usePortalAuth();
+  const { token, validatingSession } = usePortalAuth();
+  if (validatingSession) return null;
   return token ? <PortalLayout /> : <Navigate to="/portal/login" replace />;
 }
 

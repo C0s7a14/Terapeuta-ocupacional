@@ -1,11 +1,14 @@
 import axios from "axios";
 
+const configuredApiUrl = (import.meta.env.VITE_API_URL || "http://localhost:3333").trim().replace(/\/+$/, "");
+const apiBaseUrl = configuredApiUrl.endsWith("/api") ? configuredApiUrl : `${configuredApiUrl}/api`;
+
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:3333/api",
+  baseURL: apiBaseUrl,
 });
 
 export const portalApi = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:3333/api",
+  baseURL: apiBaseUrl,
 });
 
 api.interceptors.request.use((config) => {

@@ -1,9 +1,11 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { portalApi } from "../lib/api";
 import type { PortalAccount } from "../types";
 
 type PortalAuthValue = {
   account: PortalAccount | null;
   token: string | null;
+  validatingSession: boolean;
   signIn: (token: string, account: PortalAccount) => void;
   signOut: () => void;
 };
@@ -11,6 +13,7 @@ type PortalAuthValue = {
 const PortalAuthContext = createContext<PortalAuthValue | null>(null);
 
 export function PortalAuthProvider({ children }: { children: ReactNode }) {
+  const [validatingSession, setValidatingSession] = useState(true);
   const [token, setToken] = useState(() => {
     const savedToken = localStorage.getItem("essentia_portal_token");
     const savedAccount = localStorage.getItem("essentia_portal_account");
@@ -29,6 +32,37 @@ export function PortalAuthProvider({ children }: { children: ReactNode }) {
     catch { return null; }
   });
 
+  useEffect(() => {
+    let active = true;
+
+    async function validateSession() {
+      if (!token) {
+        setValidatingSession(false);
+        return;
+      }
+
+      try {
+        const { data } = await portalApi.get<PortalAccount>("/portal/auth/me");
+        if (!active) return;
+        localStorage.setItem("essentia_portal_account", JSON.stringify(data));
+        setAccount(data);
+      } catch {
+        if (!active) return;
+        localStorage.removeItem("essentia_portal_token");
+        localStorage.removeItem("essentia_portal_account");
+        setToken(null);
+        setAccount(null);
+      } finally {
+        if (active) setValidatingSession(false);
+      }
+    }
+
+    void validateSession();
+    return () => {
+      active = false;
+    };
+  }, [token]);
+
   function signIn(newToken: string, newAccount: PortalAccount) {
     localStorage.setItem("essentia_portal_token", newToken);
     localStorage.setItem("essentia_portal_account", JSON.stringify(newAccount));
@@ -43,7 +77,7 @@ export function PortalAuthProvider({ children }: { children: ReactNode }) {
     setAccount(null);
   }
 
-  return <PortalAuthContext.Provider value={{ account, token, signIn, signOut }}>{children}</PortalAuthContext.Provider>;
+  return <PortalAuthContext.Provider value={{ account, token, validatingSession, signIn, signOut }}>{children}</PortalAuthContext.Provider>;
 }
 
 export function usePortalAuth() {
