@@ -5,25 +5,25 @@ export default {
     extend: {
       colors: {
         rosewood: {
-          50: "#fff8f8",
-          100: "#fbecee",
-          200: "#f3d5da",
-          300: "#e8b4bd",
-          400: "#d78e9c",
-          500: "#be6f7e",
-          600: "#a95364",
-          700: "#8c4352",
-          800: "#743a46",
-          900: "#63353f"
+          50: "#fff7f8",
+          100: "#ffebef",
+          200: "#fbd5dd",
+          300: "#f4b4c2",
+          400: "#e98ba0",
+          500: "#d96b84",
+          600: "#bf4f6b",
+          700: "#9f3e57",
+          800: "#85374b",
+          900: "#713343"
         },
-        cream: "#fcf9f7",
-        nude: "#eadbd4"
+        cream: "#fdf9f7",
+        nude: "#efe0da"
       },
       boxShadow: {
-        soft: "0 12px 35px rgba(112, 61, 73, 0.08)"
+        soft: "0 14px 40px rgba(108, 52, 69, 0.08)",
+        lift: "0 20px 55px rgba(108, 52, 69, 0.12)"
       }
     }
   },
   plugins: []
 };
-

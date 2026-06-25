@@ -4,16 +4,30 @@
 
 @layer base {
   * { @apply border-stone-200; }
-  body { @apply bg-cream text-stone-700 antialiased; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+  html { @apply bg-cream; }
+  body {
+    @apply min-w-[320px] bg-cream text-stone-700 antialiased;
+    font-family: Inter, "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+    background-image:
+      radial-gradient(circle at 100% 0%, rgba(251, 213, 221, 0.42), transparent 26rem),
+      radial-gradient(circle at 0% 100%, rgba(239, 224, 218, 0.38), transparent 30rem);
+    background-attachment: fixed;
+  }
+  ::selection { @apply bg-rosewood-200 text-rosewood-900; }
   input, textarea, select { @apply outline-none; }
 }
 
 @layer components {
-  .card { @apply rounded-2xl border border-stone-200/80 bg-white p-5 shadow-soft; }
-  .btn-primary { @apply inline-flex items-center justify-center gap-2 rounded-xl bg-rosewood-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rosewood-600 disabled:cursor-not-allowed disabled:opacity-60; }
-  .btn-secondary { @apply inline-flex items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-sm font-semibold text-stone-600 transition hover:border-rosewood-200 hover:bg-rosewood-50; }
-  .field { @apply w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 text-sm text-stone-700 transition placeholder:text-stone-400 focus:border-rosewood-400 focus:ring-4 focus:ring-rosewood-100; }
+  .card { @apply rounded-3xl border border-white/90 bg-white/90 p-5 shadow-soft backdrop-blur-sm sm:p-6; }
+  .card-hover { @apply transition duration-300 hover:-translate-y-0.5 hover:shadow-lift; }
+  .btn-primary { @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-rosewood-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-rosewood-200/60 transition hover:-translate-y-0.5 hover:bg-rosewood-700 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0; }
+  .btn-secondary { @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-rosewood-100 bg-white px-4 py-2.5 text-sm font-semibold text-stone-600 shadow-sm transition hover:border-rosewood-200 hover:bg-rosewood-50 hover:text-rosewood-700; }
+  .field { @apply w-full rounded-2xl border border-stone-200/80 bg-white px-4 py-3 text-sm text-stone-700 shadow-sm transition placeholder:text-stone-400 hover:border-rosewood-200 focus:border-rosewood-400 focus:ring-4 focus:ring-rosewood-100/80; }
   .label { @apply mb-1.5 block text-sm font-medium text-stone-600; }
+  .eyebrow { @apply text-xs font-semibold uppercase tracking-[0.18em] text-rosewood-500; }
+  .icon-button { @apply inline-flex h-10 w-10 items-center justify-center rounded-xl text-stone-400 transition hover:bg-rosewood-50 hover:text-rosewood-600; }
+  .status-active { @apply inline-flex items-center gap-1.5 rounded-full bg-rosewood-50 px-3 py-1 text-xs font-semibold text-rosewood-700 ring-1 ring-inset ring-rosewood-200/70; }
+  .status-muted { @apply inline-flex items-center gap-1.5 rounded-full bg-stone-100 px-3 py-1 text-xs font-semibold text-stone-500 ring-1 ring-inset ring-stone-200; }
 }
 
 @media print {
@@ -21,5 +35,5 @@
   .print-area { padding: 0 !important; background: white !important; }
   .print-card { border: 0 !important; box-shadow: none !important; padding: 0 !important; }
   body { background: white !important; color: #292524 !important; }
+  @page { margin: 18mm; }
 }
-
