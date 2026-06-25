@@ -1,0 +1,144 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum PatientStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum CareType {
+  CLINICAL
+  HOME
+  SCHOOL
+  ONLINE
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELED
+  NO_SHOW
+}
+
+model Therapist {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  phone        String?
+  professionalId String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  patients     Patient[]
+  evolutions   SessionEvolution[]
+  appointments Appointment[]
+  documents    PatientDocument[]
+}
+
+model Patient {
+  id              String        @id @default(cuid())
+  therapistId     String
+  name            String
+  birthDate       DateTime
+  guardian        String?
+  phone           String?
+  email           String?
+  address         String?       @db.Text
+  mainCondition   String?       @db.Text
+  initialComplaint String?      @db.Text
+  clinicalHistory String?       @db.Text
+  generalNotes    String?       @db.Text
+  status          PatientStatus @default(ACTIVE)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  therapist       Therapist     @relation(fields: [therapistId], references: [id], onDelete: Cascade)
+  medicalRecord   MedicalRecord?
+  evolutions      SessionEvolution[]
+  appointments    Appointment[]
+  documents       PatientDocument[]
+
+  @@index([therapistId, status])
+}
+
+model MedicalRecord {
+  id                   String   @id @default(cuid())
+  patientId            String   @unique
+  initialAssessment    String?  @db.Text
+  therapeuticGoals     String?  @db.Text
+  therapeuticPlan      String?  @db.Text
+  suggestedFrequency   String?
+  clinicalNotes        String?  @db.Text
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  patient              Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+}
+
+model SessionEvolution {
+  id                   String   @id @default(cuid())
+  patientId            String
+  therapistId          String
+  sessionDate          DateTime
+  time                 String
+  careType             CareType
+  sessionGoal          String   @db.Text
+  activitiesPerformed  String   @db.Text
+  patientPerformance   String   @db.Text
+  observedDifficulties String?  @db.Text
+  perceivedProgress    String?  @db.Text
+  nextSteps             String?  @db.Text
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  patient              Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  therapist            Therapist @relation(fields: [therapistId], references: [id], onDelete: Cascade)
+
+  @@index([therapistId, sessionDate])
+  @@index([patientId, sessionDate])
+}
+
+model Appointment {
+  id          String            @id @default(cuid())
+  patientId   String
+  therapistId String
+  date        DateTime
+  startTime   String
+  endTime     String
+  careType    CareType
+  status      AppointmentStatus @default(SCHEDULED)
+  notes       String?           @db.Text
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  patient     Patient           @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  therapist   Therapist         @relation(fields: [therapistId], references: [id], onDelete: Cascade)
+
+  @@index([therapistId, date])
+}
+
+model PatientDocument {
+  id          String   @id @default(cuid())
+  patientId   String
+  therapistId String
+  name        String
+  type        String
+  description String?  @db.Text
+  url         String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  patient     Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  therapist   Therapist @relation(fields: [therapistId], references: [id], onDelete: Cascade)
+
+  @@index([patientId])
+  @@index([therapistId])
+}
+

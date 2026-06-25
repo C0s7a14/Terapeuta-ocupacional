@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.env
+*.log
+*.tsbuildinfo
+.npm-cache/
+.DS_Store
+coverage/
+frontend/.vite/
