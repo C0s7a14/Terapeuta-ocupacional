@@ -57,6 +57,15 @@ async function main() {
     },
   });
 
+  await prisma.patientPortalAccount.create({
+    data: {
+      patientId: ana.id,
+      name: "Juliana Santos",
+      email: "paciente@exemplo.com",
+      passwordHash: await bcrypt.hash("123456", 12),
+    },
+  });
+
   await prisma.sessionEvolution.create({
     data: {
       therapistId: therapist.id,
@@ -135,7 +144,7 @@ async function main() {
     });
   }));
 
-  console.log("Seed concluído. Login: terapeuta@exemplo.com / 123456");
+  console.log("Seed concluído. Terapeuta: terapeuta@exemplo.com / 123456 | Portal: paciente@exemplo.com / 123456");
 }
 
 main().finally(() => prisma.$disconnect());

@@ -11,6 +11,31 @@ export interface Therapist {
   professionalId?: string;
 }
 
+export interface PortalAccount {
+  id: string;
+  name: string;
+  email: string;
+  patient: {
+    id: string;
+    name: string;
+    birthDate: string;
+    guardian?: string;
+  };
+}
+
+export interface PortalDiaryEntry {
+  id: string;
+  mood: DiaryMood;
+  emotionalScale: number;
+  stressLevel: number;
+  sleepQuality?: number;
+  description: string;
+  activities?: string;
+  patientOrCaregiverNotes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface MedicalRecord {
   id?: string;
   initialAssessment?: string;

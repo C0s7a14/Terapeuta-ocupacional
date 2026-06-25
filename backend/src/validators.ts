@@ -13,6 +13,18 @@ export const loginSchema = z.object({
   password: z.string().min(1),
 });
 
+export const portalLoginSchema = loginSchema;
+
+export const portalDiaryEntrySchema = z.object({
+  mood: z.enum(["HAPPY", "NEUTRAL", "SAD", "ANXIOUS", "TIRED"]),
+  emotionalScale: z.number().int().min(1).max(10),
+  stressLevel: z.number().int().min(1).max(10),
+  sleepQuality: z.number().int().min(1).max(10).optional().nullable(),
+  description: z.string().trim().min(2),
+  activities: z.string().trim().optional().nullable(),
+  patientOrCaregiverNotes: z.string().trim().optional().nullable(),
+});
+
 export const patientSchema = z.object({
   name: z.string().min(2),
   birthDate: z.string().date(),
