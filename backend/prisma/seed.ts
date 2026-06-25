@@ -110,6 +110,31 @@ async function main() {
     },
   });
 
+  const diaryExamples = [
+    { mood: "HAPPY", emotionalScale: 8, stressLevel: 3, sleepQuality: 8, description: "Dia tranquilo, com boa disposição para as atividades.", activities: "Brincadeiras no parque e atividade de recorte.", patientOrCaregiverNotes: "Dormiu bem e acordou animada.", tags: ["bem-estar", "participação"] },
+    { mood: "NEUTRAL", emotionalScale: 6, stressLevel: 5, sleepQuality: 7, description: "Manteve rotina habitual, com alguma resistência nas transições.", activities: "Atividades escolares e organização do material.", patientOrCaregiverNotes: "Precisou de mais lembretes durante a manhã.", tags: ["rotina"] },
+    { mood: "ANXIOUS", emotionalScale: 4, stressLevel: 8, sleepQuality: 5, description: "Apresentou ansiedade antes de uma atividade nova.", activities: "Tarefa escolar nova e treino de autocuidado.", patientOrCaregiverNotes: "Perguntou várias vezes como seria o dia.", tags: ["ansiedade", "transição"] },
+    { mood: "TIRED", emotionalScale: 5, stressLevel: 7, sleepQuality: 4, description: "Demonstrou cansaço e menor tolerância a tarefas prolongadas.", activities: "Rotina escolar e atividade de coordenação motora.", patientOrCaregiverNotes: "Foi dormir mais tarde na noite anterior.", tags: ["sono", "cansaço"] },
+    { mood: "SAD", emotionalScale: 3, stressLevel: 9, sleepQuality: 5, description: "Ficou frustrada após uma dificuldade em atividade escolar.", activities: "Escrita, recorte e organização da mochila.", patientOrCaregiverNotes: "Disse que não conseguiria terminar a tarefa.", tags: ["frustração", "escola"] },
+    { mood: "NEUTRAL", emotionalScale: 6, stressLevel: 4, sleepQuality: 7, description: "Recuperou o ritmo e participou das atividades familiares.", activities: "Passeio em família e organização do quarto.", patientOrCaregiverNotes: "Aceitou ajuda e terminou a organização.", tags: ["autonomia", "família"] },
+    { mood: "HAPPY", emotionalScale: 8, stressLevel: 2, sleepQuality: 9, description: "Mostrou-se alegre, comunicativa e envolvida nas brincadeiras.", activities: "Culinária em família e brincadeira livre.", patientOrCaregiverNotes: "Comentou que gostou muito de ajudar na cozinha.", tags: ["família", "bem-estar"] },
+  ] as const;
+
+  await Promise.all(diaryExamples.map((entry, index) => {
+    const createdAt = new Date();
+    createdAt.setUTCDate(createdAt.getUTCDate() - (6 - index));
+    createdAt.setUTCHours(15, 0, 0, 0);
+    return prisma.patientDiaryEntry.create({
+      data: {
+        therapistId: therapist.id,
+        patientId: ana.id,
+        ...entry,
+        tags: [...entry.tags],
+        createdAt,
+      },
+    });
+  }));
+
   console.log("Seed concluído. Login: terapeuta@exemplo.com / 123456");
 }
 

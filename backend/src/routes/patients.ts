@@ -9,6 +9,23 @@ async function ownedPatient(id: string, therapistId: string) {
   return prisma.patient.findFirst({ where: { id, therapistId } });
 }
 
+const moodLabels = {
+  HAPPY: "Feliz",
+  NEUTRAL: "Neutro",
+  SAD: "Triste",
+  ANXIOUS: "Ansioso",
+  TIRED: "Cansado",
+} as const;
+
+function parseReportDate(value: unknown, fallback: Date, endOfDay = false) {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return fallback;
+  return new Date(`${value}T${endOfDay ? "23:59:59.999" : "00:00:00.000"}Z`);
+}
+
+function roundAverage(values: number[]) {
+  return values.length ? Math.round((values.reduce((sum, value) => sum + value, 0) / values.length) * 10) / 10 : null;
+}
+
 patientsRouter.get("/", async (req, res) => {
   const search = String(req.query.search ?? "");
   const patients = await prisma.patient.findMany({
@@ -151,6 +168,85 @@ patientsRouter.get("/:id/diary", async (req, res) => {
     orderBy: { createdAt: "desc" },
   });
   res.json(entries);
+});
+
+patientsRouter.get("/:id/diary/weekly-report", async (req, res) => {
+  const patient = await ownedPatient(req.params.id, req.therapistId!);
+  if (!patient) return res.status(404).json({ message: "Paciente não encontrado." });
+
+  const defaultEnd = new Date();
+  defaultEnd.setUTCHours(23, 59, 59, 999);
+  const defaultStart = new Date(defaultEnd);
+  defaultStart.setUTCDate(defaultEnd.getUTCDate() - 6);
+  defaultStart.setUTCHours(0, 0, 0, 0);
+  const startDate = parseReportDate(req.query.startDate, defaultStart);
+  const endDate = parseReportDate(req.query.endDate, defaultEnd, true);
+  if (startDate > endDate) return res.status(400).json({ message: "O período informado é inválido." });
+
+  const entries = await prisma.patientDiaryEntry.findMany({
+    where: {
+      patientId: patient.id,
+      therapistId: req.therapistId!,
+      createdAt: { gte: startDate, lte: endDate },
+    },
+    orderBy: { createdAt: "asc" },
+  });
+
+  const moodCounts = entries.reduce<Record<string, number>>((counts, entry) => {
+    counts[entry.mood] = (counts[entry.mood] || 0) + 1;
+    return counts;
+  }, {});
+  const predominantMood = Object.entries(moodCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+  const averageEmotional = roundAverage(entries.map((entry) => entry.emotionalScale));
+  const averageStress = roundAverage(entries.map((entry) => entry.stressLevel));
+  const sleepValues = entries.flatMap((entry) => entry.sleepQuality == null ? [] : [entry.sleepQuality]);
+  const averageSleep = roundAverage(sleepValues);
+  const maxStress = entries.length ? Math.max(...entries.map((entry) => entry.stressLevel)) : null;
+
+  const expectedDates: string[] = [];
+  const cursor = new Date(startDate);
+  while (cursor <= endDate) {
+    expectedDates.push(cursor.toISOString().slice(0, 10));
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  const recordedDates = new Set(entries.map((entry) => entry.createdAt.toISOString().slice(0, 10)));
+  const missingDates = expectedDates.filter((date) => !recordedDates.has(date));
+  const highStressEntries = entries.filter((entry) => entry.stressLevel >= 7);
+  const difficultMoodEntries = entries.filter((entry) => ["SAD", "ANXIOUS", "TIRED"].includes(entry.mood));
+  const emotionalDrops = entries.slice(1).filter((entry, index) => entry.emotionalScale < entries[index].emotionalScale);
+  const caregiverNotes = entries.filter((entry) => entry.patientOrCaregiverNotes);
+
+  const attentionPoints: string[] = [];
+  if (highStressEntries.length) attentionPoints.push(`${highStressEntries.length} dia(s) com estresse elevado (7 ou mais).`);
+  if (difficultMoodEntries.length) attentionPoints.push(`${difficultMoodEntries.length} registro(s) com humor triste, ansioso ou cansado.`);
+  if (missingDates.length) attentionPoints.push(`${missingDates.length} dia(s) sem registro no período.`);
+  if (emotionalDrops.length) attentionPoints.push("Foi identificada queda na escala emocional ao longo da semana.");
+  if (caregiverNotes.length) attentionPoints.push(`${caregiverNotes.length} observação(ões) do paciente ou responsável requerem leitura.`);
+
+  const suggestions = new Set<string>();
+  if (highStressEntries.length) suggestions.add("Investigar gatilhos de estresse e revisar estratégias de autorregulação.");
+  if (missingDates.length >= 2) suggestions.add("Revisar a rotina da semana e possíveis barreiras para o registro diário.");
+  if (difficultMoodEntries.length) suggestions.add("Conversar sobre situações associadas a tristeza, ansiedade ou cansaço.");
+  if (averageSleep != null && averageSleep < 6) suggestions.add("Observar sono, cansaço e impacto na participação ocupacional.");
+  if (entries.some((entry) => entry.mood === "HAPPY")) suggestions.add("Retomar atividades que favoreceram bem-estar e engajamento.");
+  if (!suggestions.size) suggestions.add("Manter o acompanhamento da rotina e reforçar estratégias que sustentaram o bem-estar.");
+
+  res.json({
+    patient: { id: patient.id, name: patient.name, mainCondition: patient.mainCondition },
+    period: { startDate: startDate.toISOString(), endDate: endDate.toISOString(), issuedAt: new Date().toISOString() },
+    entries,
+    recordCount: entries.length,
+    predominantMood,
+    predominantMoodLabel: predominantMood ? moodLabels[predominantMood as keyof typeof moodLabels] : null,
+    averageEmotional,
+    averageStress,
+    maxStress,
+    averageSleep,
+    moodDistribution: moodCounts,
+    missingDates,
+    attentionPoints,
+    suggestions: [...suggestions],
+  });
 });
 
 patientsRouter.post("/:id/diary", async (req, res) => {

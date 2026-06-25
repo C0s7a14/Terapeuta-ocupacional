@@ -158,9 +158,12 @@ model PatientDiaryEntry {
   therapistId      String
   mood             DiaryMood
   emotionalScale   Int
+  stressLevel      Int
+  sleepQuality     Int?
   description      String    @db.Text
   activities       String?   @db.Text
   therapistNotes   String?   @db.Text
+  patientOrCaregiverNotes String? @db.Text
   tags             Json?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt

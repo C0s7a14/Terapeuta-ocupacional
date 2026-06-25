@@ -61,12 +61,32 @@ export interface PatientDiaryEntry {
   therapistId: string;
   mood: DiaryMood;
   emotionalScale: number;
+  stressLevel: number;
+  sleepQuality?: number;
   description: string;
   activities?: string;
   therapistNotes?: string;
+  patientOrCaregiverNotes?: string;
   tags?: string[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface WeeklyDiaryReport {
+  patient: Pick<Patient, "id" | "name" | "mainCondition">;
+  period: { startDate: string; endDate: string; issuedAt: string };
+  entries: PatientDiaryEntry[];
+  recordCount: number;
+  predominantMood: DiaryMood | null;
+  predominantMoodLabel: string | null;
+  averageEmotional: number | null;
+  averageStress: number | null;
+  maxStress: number | null;
+  averageSleep: number | null;
+  moodDistribution: Partial<Record<DiaryMood, number>>;
+  missingDates: string[];
+  attentionPoints: string[];
+  suggestions: string[];
 }
 
 export interface Patient {

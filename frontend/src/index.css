@@ -34,6 +34,8 @@
   .no-print { display: none !important; }
   .print-area { padding: 0 !important; background: white !important; }
   .print-card { border: 0 !important; box-shadow: none !important; padding: 0 !important; }
+  .weekly-report { margin: 0 !important; }
+  .weekly-print { border: 0 !important; box-shadow: none !important; padding: 0 !important; }
   body { background: white !important; color: #292524 !important; }
   @page { margin: 18mm; }
 }
