@@ -54,8 +54,8 @@ npm run seed --prefix backend
 
 Credenciais do seed:
 
-- E-mail: `terapeuta@exemplo.com`
-- Senha: `123456`
+- Terapeuta: `terapeuta@exemplo.com` / `123456`
+- Paciente ou responsável: `paciente@exemplo.com` / `123456`
 
 6. Inicie frontend e backend:
 
@@ -121,3 +121,19 @@ No frontend:
 ```
 
 > O campo de documento registra apenas uma URL ou caminho de referência. Upload real não faz parte deste MVP.
+
+## Como testar o Portal do Paciente
+
+Com frontend e backend em execução:
+
+- Login da terapeuta: http://localhost:5173/login
+- Login do paciente/responsável: http://localhost:5173/portal/login
+
+Credenciais fictícias:
+
+- Terapeuta: `terapeuta@exemplo.com` / `123456`
+- Paciente ou responsável: `paciente@exemplo.com` / `123456`
+
+A terapeuta pode gerenciar o acesso ao portal abrindo um paciente e selecionando a aba **Acesso ao Portal**. Nessa área é possível criar a conta, editar nome e e-mail, ativar ou desativar o acesso e redefinir a senha temporária.
+
+O portal permite apenas visualizar dados básicos do próprio paciente, criar registros no Diário Terapêutico e consultar o próprio histórico. Prontuário, evoluções clínicas internas e documentos privados não são disponibilizados.

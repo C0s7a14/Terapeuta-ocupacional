@@ -4,12 +4,13 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { EvolutionForm, MedicalRecordForm, PatientForm, emptyEvolution, type EvolutionFormData, type PatientFormData } from "../components/forms";
 import { PatientDiary } from "../components/PatientDiary";
 import { WeeklyDiaryReport } from "../components/WeeklyDiaryReport";
+import { PortalAccessManager } from "../components/PortalAccessManager";
 import { EmptyState, Loading, Modal } from "../components/ui";
 import { api, getErrorMessage } from "../lib/api";
 import { careLabels, dateInput, formatDate } from "../lib/format";
 import type { Evolution, MedicalRecord, Patient } from "../types";
 
-type Tab = "overview" | "record" | "evolutions" | "diary" | "weekly" | "documents";
+type Tab = "overview" | "record" | "evolutions" | "diary" | "weekly" | "portal" | "documents";
 
 export function PatientDetails() {
   const { id } = useParams();
@@ -76,7 +77,7 @@ export function PatientDetails() {
     catch (err) { setError(getErrorMessage(err)); }
   };
 
-  const tabs: { key: Tab; label: string }[] = [{ key: "overview", label: "Visão geral" }, { key: "record", label: "Prontuário" }, { key: "evolutions", label: "Evoluções" }, { key: "diary", label: "Diário Terapêutico" }, { key: "weekly", label: "Relatório Semanal" }, { key: "documents", label: "Documentos" }];
+  const tabs: { key: Tab; label: string }[] = [{ key: "overview", label: "Visão geral" }, { key: "record", label: "Prontuário" }, { key: "evolutions", label: "Evoluções" }, { key: "diary", label: "Diário Terapêutico" }, { key: "weekly", label: "Relatório Semanal" }, { key: "portal", label: "Acesso ao Portal" }, { key: "documents", label: "Documentos" }];
   return (
     <>
       <div className="no-print mb-5"><Link to="/pacientes" className="inline-flex items-center gap-2 text-sm text-stone-500 hover:text-rosewood-600"><ArrowLeft className="h-4 w-4" />Voltar para pacientes</Link></div>
@@ -94,6 +95,7 @@ export function PatientDetails() {
       {tab === "evolutions" && <section><div className="mb-5 flex flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><p className="eyebrow mb-1">Linha de cuidado</p><h2 className="text-lg font-semibold text-stone-800">Evoluções por sessão</h2><p className="text-sm text-stone-400">{patient.evolutions?.length || 0} registros clínicos</p></div><button className="btn-primary" onClick={() => openEvolution()}><Plus className="h-4 w-4" />Nova evolução</button></div>{patient.evolutions?.length ? <div className="relative space-y-5 before:absolute before:bottom-8 before:left-5 before:top-8 before:w-px before:bg-rosewood-200 sm:before:left-6">{patient.evolutions.map((evolution) => <article key={evolution.id} className="card card-hover relative ml-10 sm:ml-12"><div className="absolute -left-[3.3rem] top-7 flex h-10 w-10 items-center justify-center rounded-full bg-white text-rosewood-500 shadow-soft ring-4 ring-rosewood-50 sm:-left-[3.65rem]"><CalendarDays className="h-4 w-4" /></div><div className="mb-5 flex flex-col justify-between gap-3 border-b border-stone-100 pb-4 sm:flex-row"><div><p className="font-semibold text-stone-700">{formatDate(evolution.sessionDate)} às {evolution.time}</p><span className="mt-1 inline-flex rounded-full bg-rosewood-50 px-2.5 py-1 text-xs font-medium text-rosewood-600">{careLabels[evolution.careType]}</span></div><div className="flex gap-1"><button className="icon-button" onClick={() => openEvolution(evolution)}><Pencil className="h-4 w-4" /></button><button className="icon-button hover:bg-red-50 hover:text-red-500" onClick={() => removeEvolution(evolution.id)}><Trash2 className="h-4 w-4" /></button></div></div><div className="grid gap-5 md:grid-cols-2"><TextBlock title="Objetivo" text={evolution.sessionGoal} /><TextBlock title="Atividades realizadas" text={evolution.activitiesPerformed} /><TextBlock title="Desempenho" text={evolution.patientPerformance} /><TextBlock title="Progresso percebido" text={evolution.perceivedProgress} /><TextBlock title="Dificuldades observadas" text={evolution.observedDifficulties} /><TextBlock title="Próximos passos" text={evolution.nextSteps} /></div></article>)}</div> : <EmptyState title="Nenhuma evolução registrada" description="Registre o acompanhamento de uma sessão para construir a linha de cuidado." action={<button className="btn-primary" onClick={() => openEvolution()}><Plus className="h-4 w-4" />Registrar evolução</button>} />}</section>}
       {tab === "diary" && <PatientDiary patientId={patient.id} patientName={patient.name} />}
       {tab === "weekly" && <WeeklyDiaryReport patientId={patient.id} />}
+      {tab === "portal" && <PortalAccessManager patientId={patient.id} patientName={patient.name} guardian={patient.guardian} />}
       {tab === "documents" && <section><div className="mb-5 flex items-center justify-between"><div><h2 className="font-semibold text-stone-800">Documentos</h2><p className="text-sm text-stone-400">Referências e documentos vinculados ao paciente.</p></div><button className="btn-primary" onClick={() => { setError(""); setModal("document"); }}><FilePlus2 className="h-4 w-4" />Novo documento</button></div>{patient.documents?.length ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{patient.documents.map((doc) => <div className="card flex gap-3" key={doc.id}><div className="h-fit rounded-xl bg-rosewood-100 p-2.5 text-rosewood-500"><FileText className="h-5 w-5" /></div><div className="min-w-0 flex-1"><p className="truncate font-semibold text-stone-700">{doc.name}</p><p className="text-xs font-medium text-rosewood-500">{doc.type}</p><p className="mt-2 line-clamp-2 text-sm text-stone-500">{doc.description || "Sem descrição"}</p>{doc.url && <p className="mt-2 truncate text-xs text-stone-400">{doc.url}</p>}</div><button className="h-fit p-1 text-stone-300 hover:text-red-500" onClick={() => removeDocument(doc.id)}><Trash2 className="h-4 w-4" /></button></div>)}</div> : <EmptyState title="Nenhum documento" description="Registre referências de documentos relacionados ao paciente." />}</section>}
 
       {modal === "patient" && <Modal title="Editar paciente" wide onClose={() => setModal(null)}>{error && <Error text={error} />}<PatientForm value={patientForm} onChange={setPatientForm} onSubmit={submitPatient} saving={saving} /></Modal>}

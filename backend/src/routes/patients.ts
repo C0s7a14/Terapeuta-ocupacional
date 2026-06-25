@@ -1,7 +1,8 @@
 import { Router } from "express";
+import bcrypt from "bcryptjs";
 import { prisma } from "../lib/prisma.js";
 import { dateOnly } from "../utils.js";
-import { diaryEntrySchema, documentSchema, evolutionSchema, medicalRecordSchema, patientSchema } from "../validators.js";
+import { diaryEntrySchema, documentSchema, evolutionSchema, medicalRecordSchema, patientSchema, portalAccountCreateSchema, portalAccountPasswordSchema, portalAccountStatusSchema, portalAccountUpdateSchema } from "../validators.js";
 
 export const patientsRouter = Router();
 
@@ -25,6 +26,16 @@ function parseReportDate(value: unknown, fallback: Date, endOfDay = false) {
 function roundAverage(values: number[]) {
   return values.length ? Math.round((values.reduce((sum, value) => sum + value, 0) / values.length) * 10) / 10 : null;
 }
+
+const portalAccountSelect = {
+  id: true,
+  patientId: true,
+  name: true,
+  email: true,
+  isActive: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;
 
 patientsRouter.get("/", async (req, res) => {
   const search = String(req.query.search ?? "");
@@ -87,6 +98,79 @@ patientsRouter.patch("/:id/status", async (req, res) => {
     return res.status(404).json({ message: "Paciente não encontrado." });
   }
   res.json(await prisma.patient.update({ where: { id: req.params.id }, data: { status } }));
+});
+
+patientsRouter.get("/:id/portal-account", async (req, res) => {
+  if (!(await ownedPatient(req.params.id, req.therapistId!))) {
+    return res.status(404).json({ message: "Paciente não encontrado." });
+  }
+  const account = await prisma.patientPortalAccount.findUnique({
+    where: { patientId: req.params.id },
+    select: portalAccountSelect,
+  });
+  res.json(account);
+});
+
+patientsRouter.post("/:id/portal-account", async (req, res) => {
+  const data = portalAccountCreateSchema.parse(req.body);
+  if (!(await ownedPatient(req.params.id, req.therapistId!))) {
+    return res.status(404).json({ message: "Paciente não encontrado." });
+  }
+  const existing = await prisma.patientPortalAccount.findUnique({ where: { patientId: req.params.id } });
+  if (existing) return res.status(409).json({ message: "Este paciente já possui acesso ao portal." });
+  const account = await prisma.patientPortalAccount.create({
+    data: {
+      patientId: req.params.id,
+      name: data.name,
+      email: data.email.toLowerCase(),
+      passwordHash: await bcrypt.hash(data.password, 12),
+      isActive: data.isActive,
+    },
+    select: portalAccountSelect,
+  });
+  res.status(201).json(account);
+});
+
+patientsRouter.put("/:id/portal-account", async (req, res) => {
+  const data = portalAccountUpdateSchema.parse(req.body);
+  if (!(await ownedPatient(req.params.id, req.therapistId!))) {
+    return res.status(404).json({ message: "Paciente não encontrado." });
+  }
+  const existing = await prisma.patientPortalAccount.findUnique({ where: { patientId: req.params.id } });
+  if (!existing) return res.status(404).json({ message: "Conta do portal não encontrada." });
+  res.json(await prisma.patientPortalAccount.update({
+    where: { id: existing.id },
+    data: { name: data.name, email: data.email.toLowerCase(), isActive: data.isActive },
+    select: portalAccountSelect,
+  }));
+});
+
+patientsRouter.patch("/:id/portal-account/password", async (req, res) => {
+  const data = portalAccountPasswordSchema.parse(req.body);
+  if (!(await ownedPatient(req.params.id, req.therapistId!))) {
+    return res.status(404).json({ message: "Paciente não encontrado." });
+  }
+  const existing = await prisma.patientPortalAccount.findUnique({ where: { patientId: req.params.id } });
+  if (!existing) return res.status(404).json({ message: "Conta do portal não encontrada." });
+  await prisma.patientPortalAccount.update({
+    where: { id: existing.id },
+    data: { passwordHash: await bcrypt.hash(data.password, 12) },
+  });
+  res.json({ message: "Senha redefinida com sucesso." });
+});
+
+patientsRouter.patch("/:id/portal-account/status", async (req, res) => {
+  const data = portalAccountStatusSchema.parse(req.body);
+  if (!(await ownedPatient(req.params.id, req.therapistId!))) {
+    return res.status(404).json({ message: "Paciente não encontrado." });
+  }
+  const existing = await prisma.patientPortalAccount.findUnique({ where: { patientId: req.params.id } });
+  if (!existing) return res.status(404).json({ message: "Conta do portal não encontrada." });
+  res.json(await prisma.patientPortalAccount.update({
+    where: { id: existing.id },
+    data: { isActive: data.isActive },
+    select: portalAccountSelect,
+  }));
 });
 
 patientsRouter.put("/:id/medical-record", async (req, res) => {

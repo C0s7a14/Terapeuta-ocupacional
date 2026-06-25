@@ -48,8 +48,11 @@ portalAuthRouter.post("/login", async (req, res) => {
     where: { email: data.email.toLowerCase() },
     include: { patient: { select: { id: true, therapistId: true, name: true, birthDate: true, guardian: true, status: true } } },
   });
-  if (!account || !account.isActive || account.patient.status !== "ACTIVE" || !(await bcrypt.compare(data.password, account.passwordHash))) {
+  if (!account || !(await bcrypt.compare(data.password, account.passwordHash))) {
     return res.status(401).json({ message: "E-mail ou senha inválidos." });
+  }
+  if (!account.isActive || account.patient.status !== "ACTIVE") {
+    return res.status(403).json({ message: "Seu acesso ao portal está inativo. Fale com sua terapeuta." });
   }
   res.json({ token: signPortalToken(account.id), account: publicPortalAccount(account) });
 });

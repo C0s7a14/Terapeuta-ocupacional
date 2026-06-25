@@ -34,7 +34,7 @@ export function AuthPage({ register = false }: { register?: boolean }) {
         <div className="flex items-center justify-center p-6 sm:p-12">
           <div className="w-full max-w-md">
             <div className="mb-8 lg:hidden"><div className="mb-2 flex items-center gap-2 text-rosewood-600"><HeartHandshake /><span className="font-semibold">Essentia TO</span></div></div>
-            <p className="text-sm font-semibold uppercase tracking-[.2em] text-rosewood-500">{register ? "Comece agora" : "Bem-vinda de volta"}</p>
+            <p className="text-sm font-semibold uppercase tracking-[.2em] text-rosewood-500">{register ? "Comece agora" : "Acesso da terapeuta"}</p>
             <h1 className="mt-2 text-3xl font-semibold text-stone-800">{register ? "Crie sua conta" : "Acesse seu espaço clínico"}</h1>
             <p className="mt-2 text-sm text-stone-500">{register ? "Cadastre seus dados profissionais." : "Entre para acompanhar seus pacientes."}</p>
             <form onSubmit={submit} className="mt-8 space-y-4">
@@ -42,13 +42,13 @@ export function AuthPage({ register = false }: { register?: boolean }) {
               <label><span className="label">E-mail</span><input className="field" type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></label>
               <label><span className="label">Senha</span><input className="field" type="password" minLength={6} required value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></label>
               {error && <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>}
-              <button className="btn-primary w-full" disabled={loading}>{loading ? "Aguarde..." : register ? "Criar conta" : "Entrar"}</button>
+              <button className="btn-primary w-full" disabled={loading}>{loading ? "Aguarde..." : register ? "Criar conta" : "Entrar como terapeuta"}</button>
             </form>
             <p className="mt-6 text-center text-sm text-stone-500">{register ? "Já possui uma conta?" : "Ainda não possui uma conta?"} <Link className="font-semibold text-rosewood-600 hover:underline" to={register ? "/login" : "/cadastro"}>{register ? "Entrar" : "Cadastre-se"}</Link></p>
+            {!register && <Link to="/portal/login" className="btn-secondary mt-4 w-full">Sou paciente ou responsável</Link>}
           </div>
         </div>
       </div>
     </div>
   );
 }
-

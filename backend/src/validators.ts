@@ -15,6 +15,27 @@ export const loginSchema = z.object({
 
 export const portalLoginSchema = loginSchema;
 
+export const portalAccountCreateSchema = z.object({
+  name: z.string().trim().min(2),
+  email: z.string().email(),
+  password: z.string().min(6),
+  isActive: z.boolean().default(true),
+});
+
+export const portalAccountUpdateSchema = z.object({
+  name: z.string().trim().min(2),
+  email: z.string().email(),
+  isActive: z.boolean(),
+});
+
+export const portalAccountPasswordSchema = z.object({
+  password: z.string().min(6),
+});
+
+export const portalAccountStatusSchema = z.object({
+  isActive: z.boolean(),
+});
+
 export const portalDiaryEntrySchema = z.object({
   mood: z.enum(["HAPPY", "NEUTRAL", "SAD", "ANXIOUS", "TIRED"]),
   emotionalScale: z.number().int().min(1).max(10),

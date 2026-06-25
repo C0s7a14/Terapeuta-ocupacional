@@ -23,6 +23,16 @@ export interface PortalAccount {
   };
 }
 
+export interface PatientPortalAccount {
+  id: string;
+  patientId: string;
+  name: string;
+  email: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface PortalDiaryEntry {
   id: string;
   mood: DiaryMood;
